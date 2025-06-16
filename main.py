@@ -92,7 +92,8 @@ def get_public_ips(endpoints: list) -> set:
             ip,
         )
         if not match:
-            raise RuntimeError("Invalid IP passed for endpoint: ", ip)
+            logger.fatal("Invalid IP passed for endpoint: ", ip)
+            sys.exit(1)
 
         stripped_ip = (
             f"{match.group(3)}:/64" if match.group(3) else f"{match.group(2)}/32"
@@ -226,7 +227,8 @@ def main():
         None,
     )
     if not policy:
-        raise RuntimeError("Cloudflare Access Policy not found!")
+        logger.fatal("Cloudflare Access Policy not found!")
+        sys.exit(1)
 
     payload = {
         "decision": "bypass",
