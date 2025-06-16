@@ -116,8 +116,8 @@ def get_public_ips(endpoints: list) -> set:
 def main():
     config = Config()
     config_data = config.get_section("MAIN")
-    approved_devices = config_data["approved_devices"].split(", ")
-    logger.info(f"Approved devices: {config_data["approved_devices"]}")
+    approved_tags = config_data["approved_tags"].split(", ")
+    logger.info(f"Approved tags: {config_data["approved_tags"]}")
     allowed_ips = set(config_data["allowed_ips"].split(", "))
     logger.info(f"Allowed IPs: {", ".join(sorted(allowed_ips))}")
 
@@ -159,12 +159,21 @@ def main():
         return key.lower(), device
 
     devices = dict(map(device_map, devices_req.json()["devices"]))
-    approved_devices_data = {k: v for k, v in devices.items() if k in approved_devices}
+    approved_devices_by_tag = {
+        tag: {k: v for k, v in devices.items() if f"tag:{tag}" in v.get("tags", list())}
+        for tag in approved_tags
+    }
+    logger.info(
+        f"Approved devices:\n{"\n".join(f"- {tag}: "
+                                        f"{", ".join(d.keys())}" for tag, d in approved_devices_by_tag.items())}"
+    )
     device_ips = {
         k: get_public_ips(v["clientConnectivity"]["endpoints"])
-        for k, v in approved_devices_data.items()
+        for k, v in {
+            k: v for tag in approved_devices_by_tag.values() for k, v in tag.items()
+        }.items()
     }
-    approved_device_ips = set()
+    approved_device_ips: set = set()
     for device_name, device_ips in device_ips.items():
         logger.info(f"{device_name} IPs: {", ".join(sorted(device_ips))}")
         if device_ips.difference(allowed_ips):
@@ -175,8 +184,7 @@ def main():
         logger.info("IPs match, exiting...")
         return
 
-    allowed_ips: set = approved_device_ips
-    logger.info(f"New IPs: {", ".join(allowed_ips)}")
+    logger.info(f"New IPs: {", ".join(approved_device_ips)}")
     config.save_section("MAIN", {"allowed_ips": ", ".join(allowed_ips)})
     cf_session = requests.Session()
     cf_session.headers.update({"Authorization": "Bearer " + config_data["cf_token"]})
