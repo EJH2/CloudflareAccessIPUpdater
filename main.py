@@ -185,7 +185,7 @@ def main():
         return
 
     logger.info(f"New IPs: {", ".join(approved_device_ips)}")
-    config.save_section("MAIN", {"allowed_ips": ", ".join(allowed_ips)})
+    config.save_section("MAIN", {"allowed_ips": ", ".join(approved_device_ips)})
     cf_session = requests.Session()
     cf_session.headers.update({"Authorization": "Bearer " + config_data["cf_token"]})
     policies_req = cf_session.get(
