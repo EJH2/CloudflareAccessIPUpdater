@@ -183,6 +183,7 @@ site/
 
 # PyCharm
 .idea/
+.idea/*
 *.iws
 *.iml
 *.ipr
