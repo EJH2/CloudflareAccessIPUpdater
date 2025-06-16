@@ -120,6 +120,10 @@ def main():
     approved_tags = config_data["approved_tags"].split(", ")
     approved_devices = config_data["approved_devices"].split(", ")
 
+    if approved_devices == [""] and approved_tags == [""]:
+        logger.fatal("No approved devices specified")
+        sys.exit(1)
+
     if approved_tags != [""]:
         logger.info(f"Approved tags: {config_data["approved_tags"]}")
     if approved_devices != [""]:
