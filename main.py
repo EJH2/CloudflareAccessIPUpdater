@@ -117,11 +117,18 @@ def main():
     config = Config()
     config_data = config.get_section("MAIN")
     approved_tags = config_data["approved_tags"].split(", ")
-    logger.info(f"Approved tags: {config_data["approved_tags"]}")
     approved_devices = config_data["approved_devices"].split(", ")
-    logger.info(f"Approved devices: {config_data["approved_devices"]}")
+
+    if approved_tags != [""]:
+        logger.info(f"Approved tags: {config_data["approved_tags"]}")
+    if approved_devices != [""]:
+        logger.info(f"Approved devices: {config_data["approved_devices"]}")
+
     allowed_ips = set(config_data["allowed_ips"].split(", "))
-    logger.info(f"Allowed IPs: {", ".join(sorted(allowed_ips))}")
+    if allowed_ips != [""]:
+        logger.info(f"Allowed IPs: {", ".join(sorted(allowed_ips))}")
+    else:
+        logger.info("No currently cached allowed IPs")
 
     ts_token = config_data["ts_token"]
     ts_expires_at = config_data["ts_expires_at"] and datetime.fromtimestamp(
@@ -161,17 +168,26 @@ def main():
         return key.lower(), device
 
     devices = dict(map(device_map, devices_req.json()["devices"]))
-    approved_devices_by_tag = {
-        tag: {k: v for k, v in devices.items() if f"tag:{tag}" in v.get("tags", list())}
-        for tag in approved_tags
-    }
-    approved_devices_by_tag.update(
-        {
-            "<manual config override>": {
-                k: v for k, v in devices.items() if k in approved_devices
+    if approved_tags != [""]:
+        approved_devices_by_tag = {
+            tag: {
+                k: v
+                for k, v in devices.items()
+                if f"tag:{tag}" in v.get("tags", list())
             }
+            for tag in approved_tags
         }
-    )
+    else:
+        approved_devices_by_tag = {}
+
+    if approved_devices != [""]:
+        approved_devices_by_tag.update(
+            {
+                "<manual config override>": {
+                    k: v for k, v in devices.items() if k in approved_devices
+                }
+            }
+        )
     logger.info(
         f"Approved devices:\n{"\n".join(f"- {tag}: "
                                         f"{", ".join(d.keys())}" for tag, d in approved_devices_by_tag.items())}"
