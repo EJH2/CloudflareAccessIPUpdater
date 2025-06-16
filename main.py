@@ -1,12 +1,55 @@
 import configparser
 import os
 import re
+import sys
 from datetime import datetime, timedelta
 from typing import MutableMapping, Union
 
 import requests
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
+
+import logging
+
+
+class CustomFormatter(logging.Formatter):
+
+    blue = "\x1b[34;20m"
+    grey = "\x1b[38;20m"
+    yellow = "\x1b[33;20m"
+    red = "\x1b[31;20m"
+    bold_red = "\x1b[31;1m"
+    reset = "\x1b[0m"
+    format = (
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s (%(filename)s:%(lineno)d)"
+    )
+
+    FORMATS = {
+        logging.DEBUG: blue + format + reset,
+        logging.INFO: grey + format + reset,
+        logging.WARNING: yellow + format + reset,
+        logging.ERROR: red + format + reset,
+        logging.CRITICAL: bold_red + format + reset,
+    }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+
+
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+
+handler.setFormatter(CustomFormatter())
+
+if not "logger" in globals():
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(level=logging.DEBUG, handlers=[handler])
+else:
+    logger = globals()["logger"]
+
+logger.debug("Logger loaded...")
 
 
 class Singleton(type):
@@ -74,16 +117,16 @@ def main():
     config = Config()
     config_data = config.get_section("MAIN")
     approved_devices = config_data["approved_devices"].split(", ")
-    print("Approved devices:", config_data["approved_devices"])
+    logger.info(f"Approved devices: {config_data["approved_devices"]}")
     allowed_ips = set(config_data["allowed_ips"].split(", "))
-    print("Allowed IPs:", ", ".join(sorted(allowed_ips)))
+    logger.info(f"Allowed IPs: {", ".join(sorted(allowed_ips))}")
 
     ts_token = config_data["ts_token"]
     ts_expires_at = config_data["ts_expires_at"] and datetime.fromtimestamp(
         float(config_data["ts_expires_at"])
     )
     if not ts_expires_at or (ts_expires_at - timedelta(minutes=5)) < datetime.now():
-        print("Tailscale token expired, refreshing...")
+        logger.warning("Tailscale token expired, refreshing...")
         ts_client_id = config_data["ts_client_id"]
         ts_client_secret = config_data["ts_client_secret"]
         client = BackendApplicationClient(client_id=ts_client_id)
@@ -98,7 +141,7 @@ def main():
         config.save_section(
             "MAIN", {"ts_token": ts_token, "ts_expires_at": str(ts_expires_at)}
         )
-        print("Tailscale token refreshed!")
+        logger.info("Tailscale token refreshed!")
 
     ts_session = requests.Session()
     ts_session.headers.update({"Authorization": "Bearer " + ts_token})
@@ -123,17 +166,17 @@ def main():
     }
     approved_device_ips = set()
     for device_name, device_ips in device_ips.items():
-        print(device_name, "IPs:", ", ".join(sorted(device_ips)))
+        logger.info(f"{device_name} IPs: {", ".join(sorted(device_ips))}")
         if device_ips.difference(allowed_ips):
-            print(f"WARNING: {device_name} IPs are not in allowed IPs!")
+            logger.warning(f"WARNING: {device_name} IPs are not in allowed IPs!")
         approved_device_ips.update(device_ips)
 
     if not allowed_ips ^ approved_device_ips:
-        print("IPs match, exiting...")
+        logger.info("IPs match, exiting...")
         return
 
     allowed_ips: set = approved_device_ips
-    print("New IPs:", ", ".join(allowed_ips))
+    logger.info(f"New IPs: {", ".join(allowed_ips)}")
     config.save_section("MAIN", {"allowed_ips": ", ".join(allowed_ips)})
     cf_session = requests.Session()
     cf_session.headers.update({"Authorization": "Bearer " + config_data["cf_token"]})
@@ -163,7 +206,7 @@ def main():
         json=payload,
     )
     policy_put_req.raise_for_status()
-    print("Policy successfully updated!")
+    logger.info("Policy successfully updated!")
 
 
 if __name__ == "__main__":
