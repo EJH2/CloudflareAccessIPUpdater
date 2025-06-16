@@ -118,6 +118,8 @@ def main():
     config_data = config.get_section("MAIN")
     approved_tags = config_data["approved_tags"].split(", ")
     logger.info(f"Approved tags: {config_data["approved_tags"]}")
+    approved_devices = config_data["approved_devices"].split(", ")
+    logger.info(f"Approved devices: {config_data["approved_devices"]}")
     allowed_ips = set(config_data["allowed_ips"].split(", "))
     logger.info(f"Allowed IPs: {", ".join(sorted(allowed_ips))}")
 
@@ -163,6 +165,13 @@ def main():
         tag: {k: v for k, v in devices.items() if f"tag:{tag}" in v.get("tags", list())}
         for tag in approved_tags
     }
+    approved_devices_by_tag.update(
+        {
+            "<manual config override>": {
+                k: v for k, v in devices.items() if k in approved_devices
+            }
+        }
+    )
     logger.info(
         f"Approved devices:\n{"\n".join(f"- {tag}: "
                                         f"{", ".join(d.keys())}" for tag, d in approved_devices_by_tag.items())}"

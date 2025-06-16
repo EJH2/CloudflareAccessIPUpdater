@@ -7,4 +7,5 @@ ts_token = [LEAVE BLANK]
 ts_expires_at =
 policy_name = Approved Device IPs Only
 approved_tags = example-tag1, exampletag2
+approved_devices = example-device, device2
 allowed_ips = a.public.non-natted.ip/32, fr:fr:ong:no-cap::/64
