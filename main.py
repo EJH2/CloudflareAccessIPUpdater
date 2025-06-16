@@ -214,6 +214,11 @@ def main():
         logger.info("IPs match, exiting...")
         return
 
+    if allowed_ips - approved_device_ips:
+        logger.warning(
+            f"Removing orphaned IPs: {", ".join(allowed_ips - approved_device_ips)}"
+        )
+
     logger.info(f"New IPs: {", ".join(approved_device_ips)}")
     config.save_section("MAIN", {"allowed_ips": ", ".join(approved_device_ips)})
     cf_session = requests.Session()
