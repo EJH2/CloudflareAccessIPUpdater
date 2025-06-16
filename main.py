@@ -132,7 +132,7 @@ def main():
         print("IPs match, exiting...")
         return
 
-    allowed_ips = approved_device_ips
+    allowed_ips: set = approved_device_ips
     print("New IPs:", ", ".join(allowed_ips))
     config.save_section("MAIN", {"allowed_ips": ", ".join(allowed_ips)})
     cf_session = requests.Session()
