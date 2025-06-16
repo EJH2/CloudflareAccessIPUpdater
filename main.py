@@ -135,6 +135,24 @@ def main():
     else:
         logger.info("No currently cached allowed IPs")
 
+    cf_session = requests.Session()
+    cf_session.headers.update({"Authorization": "Bearer " + config_data["cf_token"]})
+    policies_req = cf_session.get(
+        f"https://api.cloudflare.com/client/v4/accounts/{config_data["cf_account_id"]}/access/policies"
+    )
+    policies_req.raise_for_status()
+    policy = next(
+        (
+            p
+            for p in policies_req.json()["result"]
+            if p["name"].lower() == config_data["policy_name"].lower()
+        ),
+        None,
+    )
+    if not policy:
+        logger.fatal("Cloudflare Access Policy not found!")
+        sys.exit(1)
+
     ts_token = config_data["ts_token"]
     ts_expires_at = config_data["ts_expires_at"] and datetime.fromtimestamp(
         float(config_data["ts_expires_at"])
@@ -221,23 +239,6 @@ def main():
 
     logger.info(f"New IPs: {", ".join(approved_device_ips)}")
     config.save_section("MAIN", {"allowed_ips": ", ".join(approved_device_ips)})
-    cf_session = requests.Session()
-    cf_session.headers.update({"Authorization": "Bearer " + config_data["cf_token"]})
-    policies_req = cf_session.get(
-        f"https://api.cloudflare.com/client/v4/accounts/{config_data["cf_account_id"]}/access/policies"
-    )
-    policies_req.raise_for_status()
-    policy = next(
-        (
-            p
-            for p in policies_req.json()["result"]
-            if p["name"].lower() == config_data["policy_name"].lower()
-        ),
-        None,
-    )
-    if not policy:
-        logger.fatal("Cloudflare Access Policy not found!")
-        sys.exit(1)
 
     payload = {
         "decision": "bypass",
