@@ -241,7 +241,7 @@ def main():
     payload = {
         "decision": "bypass",
         "name": policy["name"],
-        "include": [{"ip": {"ip": ip}} for ip in allowed_ips],
+        "include": [{"ip": {"ip": ip}} for ip in approved_device_ips],
     }
     policy_put_req = cf_session.put(
         f"https://api.cloudflare.com/client/v4/accounts/"
