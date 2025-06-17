@@ -129,12 +129,6 @@ def main():
     if approved_devices != [""]:
         logger.info(f"Approved devices: {config_data["approved_devices"]}")
 
-    allowed_ips = set(config_data["allowed_ips"].split(", "))
-    if allowed_ips != [""]:
-        logger.info(f"Allowed IPs: {", ".join(sorted(allowed_ips))}")
-    else:
-        logger.info("No currently cached allowed IPs")
-
     cf_session = requests.Session()
     cf_session.headers.update({"Authorization": "Bearer " + config_data["cf_token"]})
     policies_req = cf_session.get(
@@ -152,6 +146,12 @@ def main():
     if not policy:
         logger.fatal("Cloudflare Access Policy not found!")
         sys.exit(1)
+
+    allowed_ips = {i["ip"]["ip"] for i in policy.get("include", list())}
+    if allowed_ips:
+        logger.info(f"Allowed IPs: {", ".join(sorted(allowed_ips))}")
+    else:
+        logger.info("No currently allowed IPs!")
 
     ts_token = config_data["ts_token"]
     ts_expires_at = config_data["ts_expires_at"] and datetime.fromtimestamp(
@@ -238,8 +238,6 @@ def main():
         )
 
     logger.info(f"New IPs: {", ".join(approved_device_ips)}")
-    config.save_section("MAIN", {"allowed_ips": ", ".join(approved_device_ips)})
-
     payload = {
         "decision": "bypass",
         "name": policy["name"],
