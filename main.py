@@ -40,9 +40,9 @@ class CustomFormatter(logging.Formatter):
 
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
-
 handler.setFormatter(CustomFormatter())
 
+# Check if program hook already has a logger
 if not "logger" in globals():
     logger = logging.getLogger(__name__)
     logging.basicConfig(level=logging.DEBUG, handlers=[handler])
