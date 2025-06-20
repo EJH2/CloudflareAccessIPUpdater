@@ -1,1 +1,1 @@
-*/30 * * * *  poetry run /app/main.py >>/tmp/out.log 2>/tmp/err.log
+*/30 * * * *  cd /app && poetry run python /app/main.py >>/tmp/out.log

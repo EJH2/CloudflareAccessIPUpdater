@@ -12,14 +12,15 @@ WORKDIR /app
 COPY poetry.lock pyproject.toml README.md /app/
 
 # Project initialization:
-RUN poetry update && poetry install --no-interaction --no-ansi
+RUN cd /app && poetry update && poetry install --no-interaction --no-ansi
 
 # Creating folders, and files for a project:
 COPY . /app
+RUN chmod 744 /app/main.py
 RUN crontab /app/cronjob
 
 # Create empty log (TAIL needs this)
 RUN touch /tmp/out.log
 
 # Start TAIL - as your always-on process (otherwise - container exits right after start)
-CMD ["crond", "&&", "tail", "-f", "/tmp/out.log"]
+ENTRYPOINT ["crond", "&&", "tail", "-f", "/tmp/out.log"]
