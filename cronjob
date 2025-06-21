@@ -1,1 +1,1 @@
-*/30 * * * *  cd /app && poetry run python /app/main.py >>/tmp/out.log
+*/30 * * * *  cd /app && poetry run python /app/main.py 1>/proc/1/fd/1 2>/proc/1/fd/2
