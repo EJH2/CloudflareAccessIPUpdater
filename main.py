@@ -38,14 +38,19 @@ class CustomFormatter(logging.Formatter):
         return formatter.format(record)
 
 
+log_level = (
+    getattr(logging, os.environ["LOG_LEVEL"].upper())
+    if os.environ.get("LOG_LEVEL")
+    else logging.INFO
+)
 handler = logging.StreamHandler(sys.stdout)
-handler.setLevel(logging.DEBUG)
+handler.setLevel(log_level)
 handler.setFormatter(CustomFormatter())
 
 # Check if program hook already has a logger
 if not "logger" in globals():
     logger = logging.getLogger(__name__)
-    logging.basicConfig(level=logging.DEBUG, handlers=[handler])
+    logging.basicConfig(level=log_level, handlers=[handler])
 else:
     logger = globals()["logger"]
 
