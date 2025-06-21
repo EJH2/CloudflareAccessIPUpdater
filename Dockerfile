@@ -11,16 +11,13 @@ RUN curl -sSL https://install.python-poetry.org | python3 -
 WORKDIR /app
 COPY poetry.lock pyproject.toml README.md /app/
 
-# Project initialization:
+# Project initialization
 RUN cd /app && poetry update && poetry install --no-interaction --no-ansi
 
-# Creating folders, and files for a project:
+# Creating folders, and files project
 COPY . /app
 RUN chmod 744 /app/main.py
 RUN crontab /app/cronjob
 
-# Create empty log (TAIL needs this)
-RUN touch /tmp/out.log
-
-# Start TAIL - as your always-on process (otherwise - container exits right after start)
-ENTRYPOINT ["crond", "&&", "tail", "-f", "/tmp/out.log"]
+# Start cron in foreground
+ENTRYPOINT ["crond", "-f"]
